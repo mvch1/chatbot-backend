@@ -1,23 +1,6 @@
-
-version: "3.9"
+version: "3.8"
 
 services:
-  # ── Application Python ─────────────────────────────
-  conversation-orchestrator:
-    build:
-      context: .
-      dockerfile: ./conversation-orchestrator/Dockerfile
-    container_name: conversation-orchestrator
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql+asyncpg://chatbot_user:motdepasse@postgres:5432/banking_chatbot
-      PYTHONPATH: /app
-    depends_on:
-      - postgres
-    ports:
-      - "8001:8001"  # exposer l'API
-    
-
   # ── PostgreSQL ───────────────────────────────────
   postgres:
     image: postgres:15
@@ -29,12 +12,39 @@ services:
       POSTGRES_DB: banking_chatbot
     ports:
       - "5432:5432"
-   
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Application Python ─────────────────────────────
+  conversation-orchestrator:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: conversation-orchestrator
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://chatbot_user:motdepasse@postgres:5432/banking_chatbot
+      INTENT_SERVICE_URL: http://host.docker.internal:8021
+      RAG_SERVICE_URL: http://host.docker.internal:8021
+      PYTHONPATH: /app
+    ports:
+      - "8020:8020"  # exposer l'API
+    
   # ── Adminer ─────────────────────────────────────
   adminer:
     image: adminer
     container_name: adminer
     restart: unless-stopped
+    depends_on:
+      - postgres
     ports:
       - "8080:8080"
 

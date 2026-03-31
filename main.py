@@ -111,7 +111,7 @@ async def chat(req: ChatRequest):
     # Intent
     intent_data = await _get_intent(text)
     intent      = intent_data.get("intent", "UNKNOWN")
-
+    print(f"Intent identifié: {intent}")
     # Persist intent classification result
     if db_message_id:
         await _safe(save_intent_message(db_message_id, intent))
@@ -157,7 +157,7 @@ async def _process(payload: dict):
     # Intent
     intent_data = await _get_intent(text)
     intent      = intent_data.get("intent", "UNKNOWN")
-
+    print(f"Identified intent: {intent}")
     # Persist intent classification result
     if db_message_id:
         await _safe(save_intent_message(db_message_id, intent))

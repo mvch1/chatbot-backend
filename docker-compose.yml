@@ -20,8 +20,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - shared
 
-  # ── Application Python ─────────────────────────────
+  # ── Application Python (Orchestrateur) ────────────
   conversation-orchestrator:
     build:
       context: .
@@ -33,11 +35,14 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://chatbot_user:motdepasse@postgres:5432/banking_chatbot
-      INTENT_SERVICE_URL: http://host.docker.internal:8021
-      RAG_SERVICE_URL: http://host.docker.internal:8021
+      INTENT_SERVICE_URL: http://bnm_backend:8021
+      RAG_SERVICE_URL: http://bnm_backend:8021
+      BACKEND_URL: http://bnm_backend:8021
       PYTHONPATH: /app
     ports:
       - "8020:8020"  # exposer l'API
+    networks:
+      - shared
     
   # ── Adminer ─────────────────────────────────────
   adminer:
@@ -48,7 +53,15 @@ services:
       - postgres
     ports:
       - "8081:8080"
+    networks:
+      - shared
 
 # ── Volumes ───────────────────────────────────────
 volumes:
   pgdata:
+
+# ── Networks ──────────────────────────────────────
+networks:
+  shared:
+    external: true
+    name: shared-network

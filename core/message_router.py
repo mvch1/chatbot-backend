@@ -112,14 +112,14 @@ async def route_message(
     """Route message to correct service based on intent."""
 
     if intent == "INFORMATION":
-        return await _call_endpoint("/information", user_input, session, intent)
+        return await _call_endpoint("information", user_input, session, intent)
 
     if intent == "RECLAMATION":
-        return await _call_endpoint("/reclamation", user_input, session, intent, wf_type="complaint", use_offset=True)
+        return await _call_endpoint("reclamation", user_input, session, intent, wf_type="complaint", use_offset=True)
 
     if intent == "VALIDATION":
-        return await _call_endpoint("/validation", user_input, session, intent, wf_type="wallet", use_offset=True)
-
+        return await _call_endpoint("validation", user_input, session, intent, wf_type="wallet", use_offset=True)
+    print(f"Intent non reconnu: {intent}")
     return {
         "message": (
             "Je suis désolé, je ne suis pas en mesure de traiter cette demande. "
@@ -151,7 +151,7 @@ async def _call_endpoint(
 
     # 3. Build robust URL
     base_url = settings.rag_service_url.rstrip("/")
-    target_url = f"{base_url}{path}"
+    target_url = f"{base_url}/rag/{path}"
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
@@ -176,7 +176,7 @@ async def _call_endpoint(
                 nouveau_ticket = data.get("nouveau_ticket")
                 
                 # Check if we should trigger a workflow to create a ticket
-                if nouveau_ticket and wf_type:
+                if nouveau_ticket is not None and wf_type:
                     logger.info(f"Triggering workflow {wf_type} for session {session.get('session_id')}")
                     await _trigger_workflow(wf_type, session, {"summary": nouveau_ticket})
                 

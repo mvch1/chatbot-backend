@@ -11,6 +11,8 @@ from core.message_router import route_message
 from handlers.whatsapp_handler import WhatsAppHandler
 from shared.utils.logger import get_logger
 from database.repository import save_message, save_intent_message, get_or_create_user
+from core.message_router import _get_recent_messages
+from database.models import Session
 
 logger = get_logger("conversation-orchestrator")
 
@@ -109,7 +111,7 @@ async def chat(req: ChatRequest):
     db_message_id = await _safe(save_message(session["session_id"], phone, text, "inbound"))
 
     # Intent
-    intent_data = await _get_intent(text)
+    intent_data = await _get_intent(text, session["session_id"])
     intent      = intent_data.get("intent", "UNKNOWN")
     print(f"Intent identifié: {intent}")
     # Persist intent classification result
@@ -185,16 +187,31 @@ async def _safe(coro):
         logger.error(f"DB persistence error: {exc}")
         return None
 
-
-async def _get_intent(text: str) -> dict:
+async def _get_intent(text: str, session_id: str) -> dict:
     try:
+        # Récupérer le contexte
+        contexte = None
+        if session_id:
+            # Pour l'instant, désactiver contexte pour tester
+            # contexte = await _get_recent_messages(session_id)
+            pass
+        
+        # Construire le payload
+        payload = {"question": text}
+        if contexte:
+            payload["contexte"] = contexte
+        
         async with httpx.AsyncClient(timeout=10.0) as client:
             r = await client.post(
                 f"{settings.intent_service_url}/rag/getIntent",
-                json={"question": text},
+                json=payload,
             )
             if r.status_code == 200:
                 return r.json()
+            else:
+                logger.warning(f"Intent service returned {r.status_code}")
+                
     except Exception as e:
-        logger.error(f"Intent service unreachable: {e}")
+        logger.error(f"Intent service error: {e}")
+    
     return {"intent": "UNKNOWN"}

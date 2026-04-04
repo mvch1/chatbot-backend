@@ -39,6 +39,7 @@ services:
       RAG_SERVICE_URL: http://bnm_backend:8021
       BACKEND_URL: http://bnm_backend:8021
       PYTHONPATH: /app
+  
     ports:
       - "8020:8020"  # exposer l'API
     networks:

@@ -180,6 +180,9 @@ async def _process(payload: dict):
 
 
 async def _safe(coro):
+
+
+    
     """Run a DB coroutine without letting errors break the main flow."""
     try:
         return await coro

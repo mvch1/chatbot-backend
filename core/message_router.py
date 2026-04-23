@@ -119,11 +119,8 @@ async def route_message(
 
     if intent == "VALIDATION":
         return await _call_endpoint("validation", user_input, session, intent, wf_type="wallet", use_offset=True)
-<<<<<<< HEAD
     print(f"Intent non reconnu: {intent}")
-=======
 
->>>>>>> 3fd021ea4be30c8b280e0fb70e4e2c3ca62fc6e8
     return {
         "message": (
             "Je suis désolé, je ne suis pas en mesure de traiter cette demande. "

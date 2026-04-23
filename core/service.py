@@ -66,15 +66,44 @@ async def handle_workflow(wf_type: str, session: dict, rag_data: dict):
             # ─────────────────────────────
             # 🎯 WORKFLOW WALLET
             # ─────────────────────────────
+            # ─────────────────────────────
+            # 🎯 WORKFLOW WALLET
+            # ─────────────────────────────
             if wf_type == "wallet":
 
-                db_session.state = "VALIDATED"
+                # 2. choisir agent
+                result = await db.execute(
+                    select(Agent)
+                    .where(Agent.is_active == True)
+                    .order_by(asc(Agent.active_tickets_count))
+                    .with_for_update()
+                )
+                agent = result.scalars().first()
+
+                if not agent:
+                    raise Exception("No agent available")
+
+                # 3. créer ticket
+                ticket = Ticket(
+                    number=generate_ticket_number("WAL"),
+                    session_id=db_session.id,
+                    agent_id=agent.id,
+                    description=rag_data.get("summary", "Demande wallet"),
+                    status="open"
+                )
+
+                db.add(ticket)
+
+                # 4. incrémenter agent
+                agent.active_tickets_count += 1
+
+                # 5. fermer session
+                db_session.state = "COMPLETED"
                 db_session.closed_at = datetime.now(timezone.utc)
 
                 await db.commit()
 
-                return {"status": "wallet_validated"}
-
+                return {"ticket_number": ticket.number}
         except Exception as e:
             await db.rollback()
             raise e

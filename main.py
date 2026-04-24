@@ -75,9 +75,11 @@ async def receive_message(request: Request, background_tasks: BackgroundTasks):
     # Signature check (skipped if no APP_SECRET)
     if _wa and not _wa.verify_signature(await request.body(), request.headers.get("X-Hub-Signature-256", "")):
         return PlainTextResponse("Forbidden", status_code=403)
+    phone=payload.get("entry", [{}])[0].get("changes", [{}])[0].get("value", {}).get("messages", [{}])[0].get("from", "unknown")   
+    message=payload.get("entry", [{}])[0].get("changes", [{}])[0].get("value", {}).get("messages", [{}])[0].get("text", {}).get("body", "empty") 
 
-    background_tasks.add_task(_process, payload)
-    return {"status": "ok"}
+    
+    return chat(ChatRequest(phone=phone, message=message))
 
 
 # ── Postman / test endpoint ───────────────────────────────

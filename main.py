@@ -79,8 +79,9 @@ async def receive_message(request: Request, background_tasks: BackgroundTasks):
     message=payload.get("entry", [{}])[0].get("changes", [{}])[0].get("value", {}).get("messages", [{}])[0].get("text", {}).get("body", "empty") 
 
     
-    return chat(ChatRequest(phone=phone, message=message))
-
+    response =chat(ChatRequest(phone=phone, message=message))
+    _wa.send_text(phone, response.get("response", "Désolé, une erreur est survenue."))
+     
 
 # ── Postman / test endpoint ───────────────────────────────
 class ChatRequest(BaseModel):
